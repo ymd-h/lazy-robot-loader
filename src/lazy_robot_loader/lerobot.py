@@ -231,7 +231,7 @@ class LeRobotDataset:
           e."episode_index" AS "episode_index",
           e."length" AS "length",
           b."idx" - (e."cumsum_length" - e."length") AS "frame_index",
-        FROM (SELECT unnest([{idx.item()}]) AS "idx") b
+        FROM (SELECT {idx.item()} AS "idx") b
         ASOF JOIN "episodes" e
         ON b."idx" < e."cumsum_length";
         """).fetchnumpy()
