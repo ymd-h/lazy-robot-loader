@@ -19,3 +19,17 @@ dependencies = [
     "numpy>=2",
     "pyarrow>=21.0.0",
 ]
+
+[dependency-groups]
+dev = [
+    "jaxtyping>=0.3.2",
+    "pytest>=8.4.2",
+    "pytest-benchmark>=5.1.0",
+    "ruff>=0.13.1",
+    "ty>=0.0.1a21",
+]
+
+[tool.ruff.lint]
+ignore = [
+  "F722", # jaxtyping: https://docs.kidger.site/jaxtyping/faq/
+]
