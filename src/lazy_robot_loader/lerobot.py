@@ -7,6 +7,7 @@ from typing import cast, Any, TYPE_CHECKING, TypedDict
 import av
 import duckdb
 import numpy as np
+import pyarrow as pa
 
 if TYPE_CHECKING:
     from jaxtyping import Integer, Shaped
@@ -48,6 +49,20 @@ class LeRobotDatasetInfo(TypedDict):
     data_path: str
     video_path: str
     features: dict[str, LeRobotDatasetFeature]
+
+
+def to_array(
+    ca: pa.ChunkedArray,
+    dtype: str | None = None,
+) -> Shaped[np.ndarray, "..."]:
+    # Since `to_numpy()` method converts pa.(FixedSize)ListArray to
+    # np.ndarray of dtype='object', we first convert to python
+    # (nested) list by `pylist()` method.
+    # This might be inefficient.
+    return np.asarray(
+        ca.pylist(),
+        dtype=dtype,
+    )
 
 
 class LeRobotDataset:
@@ -272,15 +287,15 @@ class LeRobotDataset:
 
         item = (
             {
-                c: np.asarray(
-                    observation[c].to_pylist(),
+                c: to_array(
+                    observation[c],
                     dtype=self.features[c].dtype,
                 )
                 for c in observation.column_names
             }
             | {
-                c: np.asarray(
-                    action[c].to_pylist(),
+                c: to_array(
+                    action[c],
                     dtype=self.features[c].dtype,
                 )
                 for c in action.column_names
