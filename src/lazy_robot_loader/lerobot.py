@@ -238,6 +238,61 @@ class LeRobotDataset:
             .as_py()
         )
 
+    def _query_video(
+        episode_chunk: int,
+        video_key: str,
+        episode_index,
+        timestamps: Integer[np.ndarray, "N"]
+    ) -> Integer[np.ndarray, "N H W C"]:
+        video_path = (
+            self._base
+            + "/"
+            + self._info["video_path"].format(
+                episode_chunk=episode_chunk,
+                video_key=video_key,
+                episode_index=episode_index,
+            )
+        )
+
+        v = (
+            io.BytesIO(
+                self._con.query(f"""
+                SELECT "content" FROM read_blob('{video_path}');
+                """)
+                .arrow()["content"][0]
+                .as_py()
+            )
+            if video_path.startswith("hf://")
+            else video_path
+        )
+
+        with av.open(v, mode="r") as container:
+            s = container.streams.video[0]
+
+            # Seek to the last key frame at or just before the specified timestamp.
+            # Movie must start decoding from key frame,
+            # since non key frame might contain only partial information.
+            container.seek(
+                offset=int(timestamp[0] // s.time_base),
+                stream=s,
+            )
+
+            it = iter(container.decode(video=0))
+            imgs: list[Integer[np.ndarray, "H W C"]] = []
+            img: Integer[np.ndarray, "H W C"] | None = None
+            for t in timestamp:
+                for f in it:
+                    if t <= f.time:
+                        img = f.to_ndarray(format="rgb24")
+                        imgs.append(img)
+                        break
+                else:
+                    assert img is not None
+                    imgs.append(img)
+
+            return np.stack(imgs)
+        
+
     def __getitem__(
         self, idx: Integer[Any, ""]
     ) -> dict[str, Shaped[np.ndarray, "..."]]:
@@ -312,7 +367,6 @@ class LeRobotDataset:
             }
         )
 
-        videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {}
         timestamp = self._con.query(f"""
         SELECT "timestamp"
         FROM (
@@ -322,53 +376,14 @@ class LeRobotDataset:
         """).fetchnumpy()["timestamp"]
         assert len(timestamp) > 0, f"timestamp is empty: {f_idx}"
 
-        for k in self._video_keys:
-            video_path = (
-                self._base
-                + "/"
-                + self._info["video_path"].format(
-                    episode_chunk=episode_chunk,
-                    video_key=k,
-                    episode_index=episode_index,
-                )
-            )
-
-            v = (
-                io.BytesIO(
-                    self._con.query(f"""
-                    SELECT "content" FROM read_blob('{video_path}');
-                    """)
-                    .arrow()["content"][0]
-                    .as_py()
-                )
-                if video_path.startswith("hf://")
-                else video_path
-            )
-            with av.open(v, mode="r") as container:
-                s = container.streams.video[0]
-
-                # Seek to the last key frame at or just before the specified timestamp.
-                # Movie must start decoding from key frame,
-                # since non key frame might contain only partial information.
-                container.seek(
-                    offset=int(timestamp[0] // s.time_base),
-                    stream=s,
-                )
-
-                it = iter(container.decode(video=0))
-                imgs: list[Integer[np.ndarray, "H W C"]] = []
-                img: Integer[np.ndarray, "H W C"] | None = None
-                for t in timestamp:
-                    for f in it:
-                        if t <= f.time:
-                            img = f.to_ndarray(format="rgb24")
-                            imgs.append(img)
-                            break
-                    else:
-                        assert img is not None
-                        imgs.append(img)
-
-                videos[k] = np.stack(imgs)
+        videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
+            k: self._query_video(
+                episode_chunk=episode_chunk,
+                video_key=k,
+                episode_index=episode_index,
+                timestamp=timestamp,
+            ) for k in self._video_keys
+        }
 
         item |= videos
         return item
