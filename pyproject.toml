@@ -1,3 +1,7 @@
+[build-system]
+requires = ["uv_build>=0.8.19"]
+build-backend = "uv_build"
+
 [project]
 name = "lazy-robot-loader"
 version = "0.0.0"
@@ -7,4 +11,11 @@ classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",
   "Topic :: Scientific/Engineering",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "av>=15.1.0",
+    "duckdb>=1.4.0",
+    "numpy>=2",
+    "pyarrow>=21.0.0",
 ]
