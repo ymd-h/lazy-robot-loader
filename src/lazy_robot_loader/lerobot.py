@@ -1,9 +1,10 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
 import io
 import os
 import pathlib
 import re
-from typing import cast, Any, TypedDict, Iterable
+from typing import cast, Any, TypedDict
 
 import av
 import duckdb
