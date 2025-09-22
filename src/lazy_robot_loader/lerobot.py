@@ -275,11 +275,14 @@ class LeRobotDataset:
         if len(self.action_keys) == 0:
             raise ValueError("Action must not be empty.")
 
-
-        self._observation_columns: str = '"' + '","'.join(self.observation_data_keys) + '"'
+        self._observation_columns: str = (
+            '"' + '","'.join(self.observation_data_keys) + '"'
+        )
         self._action_columns: str = '"' + '","'.join(self.action_keys) + '"'
         self._extra_columns: str = (
-            ('"' + '","'.join(self.extra_keys) + '"') if len(self.extra_keys) > 0 else ""
+            ('"' + '","'.join(self.extra_keys) + '"')
+            if len(self.extra_keys) > 0
+            else ""
         )
 
         try:
