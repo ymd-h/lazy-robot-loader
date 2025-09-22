@@ -218,11 +218,19 @@ class LeRobotDataset:
         if isinstance(action_regexp, str):
             action_regexp = re.compile(action_regexp)
 
+        default_extra: tuple[str, ...] = (
+            "episode_index",
+            "frame_index",
+            "timestamp",
+        )
+
         self.features: dict[str, Feature] = {}
         self.observation_data_keys: list[str] = []
         self.observation_video_keys: list[str] = []
         self.action_keys: list[str] = []
-        self.extra_keys: list[str] = [key for key in extra_keys]
+        self.extra_keys: list[str] = [
+            key for key in extra_keys if key not in default_extra
+        ]
 
         for key, feature in self._info["features"].items():
             shape: list[int] = feature["shape"]
@@ -250,7 +258,7 @@ class LeRobotDataset:
                 self.action_keys.append(key)
                 continue
 
-            if key in self.extra_keys:
+            if (key in self.extra_keys) or (key in default_extra):
                 self.features[key] = Feature(
                     shape=shape,
                     dtype=dtype,
