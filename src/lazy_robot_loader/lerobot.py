@@ -259,7 +259,7 @@ class LeRobotDataset:
 
             if (key in self.extra_keys) or (key in default_extra):
                 self.features[key] = Feature(
-                    shape=shape,
+                    shape=tuple(shape),
                     dtype=dtype,
                 )
 
