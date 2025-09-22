@@ -238,6 +238,16 @@ class LeRobotDataset:
             .as_py()
         )
 
+    def _data_path(episode_index: int) -> str:
+        return (
+            self._base
+            + "/"
+            + self._info["data_path"].format(
+                episode_chunk=episode_index // self._info["chunk_size"],
+                episode_index=episode_index,
+            )
+        )
+
     def _query_data(
         columns: str,
         data_path: str,
@@ -339,14 +349,7 @@ class LeRobotDataset:
         episode_index: int = ep["episode_index"][0]
         episode_chunk: int = episode_index // self._info["chunks_size"]
 
-        data_path = (
-            self._base
-            + "/"
-            + self._info["data_path"].format(
-                episode_chunk=episode_chunk,
-                episode_index=episode_index,
-            )
-        )
+        data_path = self._data_path(episode_index)
 
         f_idx: int = ep["frame_index"][0]
 
