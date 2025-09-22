@@ -78,10 +78,10 @@ def to_array(
     -----
     Since `to_numpy()` method converts pa.(FixedSize)ListArray to
     np.ndarray of dtype='object', we first convert to python
-    (nested) list by `pylist()` method.
+    (nested) list by `to_pylist()` method.
     """
     return np.asarray(
-        ca.pylist(),
+        ca.to_pylist(),
         dtype=dtype,
     )
 
