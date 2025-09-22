@@ -11,7 +11,7 @@ import numpy as np
 from numpy.typing import DTypeLike
 import pyarrow as pa
 
-from jaxtyping import Integer, Shaped
+from jaxtyping import Integer, Float, Shaped
 
 
 class LeRobotDatasetFeature(TypedDict):
@@ -89,7 +89,7 @@ def to_array(
 def query_video(
     con: duckdb.DuckDBPyConnection,
     video_path: str,
-    timestamp: Integer[np.ndarray, " N"],
+    timestamp: Float[np.ndarray, " N"],
 ) -> Integer[np.ndarray, "N H W C"]:
     """
     Query Video Frames
