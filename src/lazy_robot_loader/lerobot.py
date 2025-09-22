@@ -3,7 +3,7 @@ import io
 import os
 import pathlib
 import re
-from typing import cast, Any, TYPE_CHECKING, TypedDict, Iterable
+from typing import cast, Any, TypedDict, Iterable
 
 import av
 import duckdb
