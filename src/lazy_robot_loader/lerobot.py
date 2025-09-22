@@ -312,6 +312,8 @@ class LeRobotDataset:
                         imgs.append(img)
                         break
                 else:
+                    # Video has ended.
+                    # We re-add the last frame.
                     assert img is not None
                     imgs.append(img)
 
