@@ -237,7 +237,7 @@ class LeRobotDataset:
 
             if observation_regexp.fullmatch(key):
                 self.features[key] = Feature(
-                    shape=(self.n_observation, *feature),
+                    shape=(self.n_observation, *shape),
                     dtype=dtype if dtype not in ["video", "image"] else "uint8",
                 )
 
@@ -250,7 +250,7 @@ class LeRobotDataset:
 
             if action_regexp.fullmatch(key):
                 self.features[key] = Feature(
-                    shape=(self.n_action, *feature),
+                    shape=(self.n_action, *shape),
                     dtype=dtype,
                 )
 
