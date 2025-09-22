@@ -148,6 +148,86 @@ def query_video(
         return np.stack(imgs)
 
 
+def query_data(
+    con: duckdb.DuckDBPyConnection,
+    features: dict[str, Feature],
+    columns: str,
+    data_path: str,
+    pad_column: str | None = None,
+    frame_index: int = 0,
+    n_steps: int = 1,
+    nested: bool = True,
+) -> dict[str, Shaped[np.ndarray, "{n_steps} ..."]]:
+    """
+    Query Data from Parquet
+
+    Parameters
+    ----------
+    con : duckdb.DuckDBPyConnection
+    features : dict[str, Feature]
+    columns: str
+        String representation of selected columns (e.g. '"timestamp", "episode_index"')
+    data_path : str
+        Parquet file path
+    pad_column : str, optional
+        Column name of padding
+    frame_index : int, optional
+        Frame index to be queried
+    n_steps : int, optional
+        N steps of queried frames
+    nested : bool, optional
+        Queried data contain nested data
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+    """
+    pad: str
+    data: duckdb.DuckDBPyRelation
+    if n_steps > 1:
+        pad = (
+            f'e."frame_index" != d."frame_index" AS "{pad_column}"'
+            if pad_column is not None
+            else ""
+        )
+
+        # We use AsOf Join since frame_index might exceed episode length.
+        # When the frame_index is equal to or larger than episode length,
+        # the last frame is reused and pad becomes true.
+        data = con.query(f"""
+        SELECT
+          {columns}, {pad}
+        FROM (
+          SELECT {frame_index} + unnest(range({n_steps})) AS "frame_index",
+        ) e ASOF JOIN '{data_path}' d
+        ON e."frame_index" >= d."frame_index"
+        ORDER BY e."frame_index";
+        """)
+    else:
+        pad = f'false AS "{pad_column}"' if pad_column is not None else ""
+        data = con.query(f"""
+        SELECT
+          {columns}, {pad}
+        FROM '{data_path}'
+        WHERE "frame_index" = {frame_index};
+        """)
+
+    if nested:
+        table = data.fetch_arrow_table()
+        return {
+            c: to_array(
+                table[c],
+                dtype=features[c].dtype,
+            )
+            for c in table.column_names
+        }
+    else:
+        return {
+            c: np.asarray(v, dtype=features[c].dtype)
+            for c, v in data.fetchnumpy().items()
+        }
+
+
 class LeRobotDataset:
     def __init__(
         self,
@@ -279,19 +359,15 @@ class LeRobotDataset:
         if isinstance(action_regexp, str):
             action_regexp = re.compile(action_regexp)
 
-        default_extra: tuple[str, ...] = (
-            "episode_index",
-            "frame_index",
-            "timestamp",
-        )
-
         self.features: dict[str, Feature] = {}
         self.observation_data_keys: list[str] = []
         self.observation_video_keys: list[str] = []
         self.action_keys: list[str] = []
-        self.extra_keys: list[str] = [
-            key for key in extra_keys if key not in default_extra
-        ]
+
+        self.extra_keys: list[str] = [key for key in extra_keys]
+        for k in ["episode_index", "frame_index", "timestamp"]:
+            if k not in self.extra_keys:
+                self.extra_keys.append(k)
 
         for key, feature in self._info["features"].items():
             shape: list[int] = feature["shape"]
@@ -319,7 +395,7 @@ class LeRobotDataset:
                 self.action_keys.append(key)
                 continue
 
-            if (key in self.extra_keys) or (key in default_extra):
+            if key in self.extra_keys:
                 self.features[key] = Feature(
                     shape=tuple(shape),
                     dtype=dtype,
@@ -408,33 +484,6 @@ class LeRobotDataset:
             )
         )
 
-    def _query_data(
-        self,
-        columns: str,
-        data_path: str,
-        pad_column: str | None = None,
-        frame_index: int = 0,
-        n_steps: int = 1,
-    ) -> duckdb.DuckDBPyRelation:
-        pad: str = (
-            f"""e."frame_index" != d."frame_index" AS "{pad_column}","""
-            if pad_column is not None
-            else ""
-        )
-
-        # We use AsOf Join since frame_index might exceed episode length.
-        # When the frame_index is equal to or larger than episode length,
-        # the last frame is reused and pad becomes true.
-        return self._con.query(f"""
-        SELECT
-          {columns}, {pad}
-        FROM (
-          SELECT {frame_index} + unnest(range({n_steps})) AS "frame_index",
-        ) e ASOF JOIN '{data_path}' d
-        ON e."frame_index" >= d."frame_index"
-        ORDER BY e."frame_index";
-        """)
-
     def __getitem__(
         self,
         idx: Integer[Any, ""] | int,
@@ -458,64 +507,53 @@ class LeRobotDataset:
 
         data_path = self._data_path(episode_index)
 
-        observation = self._query_data(
+        observation = query_data(
+            self._con,
+            self.features,
             columns=self._observation_columns,
             data_path=data_path,
             pad_column="observation_is_pad",
             frame_index=frame_index,
             n_steps=self.n_observation,
-        ).fetch_arrow_table()
+            nested=True,
+        )
 
-        action = self._query_data(
+        action = query_data(
+            self._con,
+            self.features,
             columns=self._action_columns,
             data_path=data_path,
             pad_column="action_is_pad",
             frame_index=frame_index,
             n_steps=self.n_action,
-        ).fetch_arrow_table()
-
-        item = (
-            {
-                c: to_array(
-                    observation[c],
-                    dtype=self.features[c].dtype,
-                )
-                for c in observation.column_names
-            }
-            | {
-                c: to_array(
-                    action[c],
-                    dtype=self.features[c].dtype,
-                )
-                for c in action.column_names
-            }
-            | {
-                k: np.asarray(v, dtype=self.features[k].dtype)
-                for k, v in self._con.query(f"""
-                SELECT
-                  "episode_index",
-                  "frame_index",
-                  "timestamp",
-                  {self._extra_columns}
-                FROM '{data_path}'
-                WHERE "frame_index" = {frame_index};
-                """)
-                .fetchnumpy()
-                .items()
-            }
+            nested=True,
         )
 
-        timestamp = self._query_data(
+        extra = query_data(
+            self._con,
+            self.features,
+            columns=self._extra_columns,
+            data_path=data_path,
+            pad_column=None,
+            frame_index=frame_index,
+            n_steps=1,
+            nested=False,
+        )
+
+        timestamp = query_data(
+            self._con,
+            self.features,
             columns='"timestamp"',
             data_path=data_path,
             pad_column=None,
             frame_index=frame_index,
             n_steps=self.n_observation,
-        ).fetchnumpy()["timestamp"]
+            nested=False,
+        )["timestamp"]
         assert timestamp.ndim == 1, f"timestamp.ndim must be 1, but {timestamp.ndim}"
         assert len(timestamp) > 0, f"timestamp is empty: {frame_index}"
 
-        videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
+        videos = {
             video_key: query_video(
                 self._con,
                 video_path=self._video_path(
@@ -527,7 +565,12 @@ class LeRobotDataset:
             for video_key in self.observation_video_keys
         }
 
-        item |= videos
+        item = {
+            **observation,
+            **action,
+            **extra,
+            **videos,
+        }
         return item
 
     def __len__(self) -> int:
