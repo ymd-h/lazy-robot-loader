@@ -238,6 +238,30 @@ class LeRobotDataset:
             .as_py()
         )
 
+    def _query_data(
+        columns: str,
+        data_path: str,
+        pad_column: str | None = None,
+        frame_index: int = 0,
+        n_steps: int = 1,
+    ) -> pa.Table:
+        pad: str = (
+            f"""e."frame_index" != d."frame_index" AS "{pad_column}","""
+            if pad_column is not None else ""
+        )
+
+        # We use AsOf Join since frame_index might exceed episode length.
+        # When the frame_index is equal to or larger than episode length,
+        # the last frame is reused and pad becomes true.
+        return self._con.query(f"""
+        SELECT
+          {columns}, {pad}
+        FROM (
+          SELECT {frame_index} + unnest(range({n_steps})) AS "frame_index",
+        ) e ASOF JOIN '{data_path}' d
+        ON e."frame_index" >= d."frame_index";
+        """).arrow()
+
     def _query_video(
         episode_chunk: int,
         video_key: str,
@@ -291,7 +315,7 @@ class LeRobotDataset:
                     imgs.append(img)
 
             return np.stack(imgs)
-        
+
 
     def __getitem__(
         self, idx: Integer[Any, ""]
@@ -320,25 +344,21 @@ class LeRobotDataset:
 
         f_idx: int = ep["frame_index"][0]
 
-        observation = self._con.query(f"""
-        SELECT
-          COLUMNS('observation.*'),
-          e."frame_index" != d."frame_index" AS "observation_is_pad",
-        FROM (
-          SELECT {f_idx} + unnest(range({self.n_observation})) AS "frame_index",
-        ) e ASOF JOIN '{data_path}' d
-        ON e."frame_index" >= d."frame_index";
-        """).arrow()
+        observation = self._query_data(
+            columns="COLUMNS('observation.*')",
+            data_path=data_path,
+            pad_column="observation_is_pad",
+            frame_index=f_idx,
+            n_steps=self.n_observation,
+        )
 
-        action = self._con.query(f"""
-        SELECT
-          COLUMNS('action.*'),
-          e."frame_index" != d."frame_index" AS "action_is_pad",
-        FROM (
-          SELECT {f_idx} + unnest(range({self.n_action})) AS "frame_index"
-        ) e ASOF JOIN '{data_path}' d
-        ON e."frame_index" >= d."frame_index";
-        """).arrow()
+        action = self._query_data(
+            columns="COLUMNS('action.*')",
+            data_path=data_path,
+            pad_column="action_is_pad",
+            frame_index=f_idx,
+            n_steps=self.n_action,
+        )
 
         item = (
             {
