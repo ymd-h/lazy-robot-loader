@@ -423,6 +423,7 @@ class LeRobotDataset:
             frame_index=frame_index,
             n_steps=self.n_observation,
         ).fetchnumpy()["timestamp"]
+        assert timestamp.ndim == 1, f"timestamp.ndim must be 1, but {timestamp.ndim}"
         assert len(timestamp) > 0, f"timestamp is empty: {frame_index}"
 
         videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
