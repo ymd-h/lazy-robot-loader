@@ -259,7 +259,8 @@ class LeRobotDataset:
         FROM (
           SELECT {frame_index} + unnest(range({n_steps})) AS "frame_index",
         ) e ASOF JOIN '{data_path}' d
-        ON e."frame_index" >= d."frame_index";
+        ON e."frame_index" >= d."frame_index"
+        ORDER BY "frame_index";
         """).arrow()
 
     def _query_video(
