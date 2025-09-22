@@ -86,6 +86,68 @@ def to_array(
     )
 
 
+def query_video(
+    con: duckdb.DuckDBPyConnection,
+    video_path: str,
+    timestamp: Integer[np.ndarray, " N"],
+) -> Integer[np.ndarray, "N H W C"]:
+    """
+    Query Video Frames
+
+    Parameters
+    ----------
+    con : duckdb.DuckDBPyConnection
+        Connection
+    video_path : str
+        Video File Path or HF URL
+    timestamp : np.ndarray
+        N steps of timestamp
+
+    Returns
+    -------
+    N steps of RGB frames. The shape is (N, H, W, C)
+    """
+    v = (
+        io.BytesIO(
+            con.query(f"""
+            SELECT "content" FROM read_blob('{video_path}');
+            """)
+            .fetch_arrow_table()["content"][0]
+            .as_py()
+        )
+        if video_path.startswith("hf://")
+        else video_path
+    )
+
+    with av.open(v, mode="r") as container:
+        s = container.streams.video[0]
+
+        # Seek to the last key frame at or just before the specified timestamp.
+        # Movie must start decoding from key frame,
+        # since non key frame might contain only partial information.
+        container.seek(
+            offset=int(timestamp[0] // s.time_base),
+            stream=s,
+        )
+
+        it = iter(container.decode(video=0))
+        imgs: list[Integer[np.ndarray, "H W C"]] = []
+        img: Integer[np.ndarray, "H W C"] | None = None
+        for t in timestamp:
+            for f in it:
+                if t <= f.time:
+                    img = f.to_ndarray(format="rgb24")
+                    imgs.append(img)
+                    break
+            else:
+                # Video has ended.
+                # We re-add the last frame.
+                assert img is not None
+                imgs.append(img)
+
+        return np.stack(imgs)
+
+
 class LeRobotDataset:
     def __init__(
         self,
@@ -373,49 +435,6 @@ class LeRobotDataset:
         ORDER BY e."frame_index";
         """)
 
-    def _query_video(
-        self, video_path: str, timestamp: Integer[np.ndarray, " N"]
-    ) -> Integer[np.ndarray, "N H W C"]:
-        v = (
-            io.BytesIO(
-                self._con.query(f"""
-                SELECT "content" FROM read_blob('{video_path}');
-                """)
-                .fetch_arrow_table()["content"][0]
-                .as_py()
-            )
-            if video_path.startswith("hf://")
-            else video_path
-        )
-
-        with av.open(v, mode="r") as container:
-            s = container.streams.video[0]
-
-            # Seek to the last key frame at or just before the specified timestamp.
-            # Movie must start decoding from key frame,
-            # since non key frame might contain only partial information.
-            container.seek(
-                offset=int(timestamp[0] // s.time_base),
-                stream=s,
-            )
-
-            it = iter(container.decode(video=0))
-            imgs: list[Integer[np.ndarray, "H W C"]] = []
-            img: Integer[np.ndarray, "H W C"] | None = None
-            for t in timestamp:
-                for f in it:
-                    if t <= f.time:
-                        img = f.to_ndarray(format="rgb24")
-                        imgs.append(img)
-                        break
-                else:
-                    # Video has ended.
-                    # We re-add the last frame.
-                    assert img is not None
-                    imgs.append(img)
-
-            return np.stack(imgs)
-
     def __getitem__(
         self,
         idx: Integer[Any, ""] | int,
@@ -495,7 +514,8 @@ class LeRobotDataset:
         assert len(timestamp) > 0, f"timestamp is empty: {frame_index}"
 
         videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
-            video_key: self._query_video(
+            video_key: query_video(
+                self._con,
                 video_path=self._video_path(
                     episode_index=episode_index,
                     video_key=video_key,
