@@ -34,3 +34,6 @@ dev = [
 ignore = [
   "F722", # jaxtyping: https://docs.kidger.site/jaxtyping/faq/
 ]
+
+[tool.pytest.ini_options]
+addopts = "--jaxtyping-packages=lazy_robot_loader.lerobot,beartype.beartype"
