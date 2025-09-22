@@ -241,12 +241,11 @@ class LeRobotDataset:
             self._con.query("""
           SELECT max("cumsum_length")::BIGINT AS "length"
           FROM "episodes";
-        """)
-            .arrow()["length"][0]
+        """).arrow()["length"][0]
             .as_py()
         )
 
-    def _data_path(episode_index: int) -> str:
+    def _data_path(self, episode_index: int) -> str:
         return (
             self._base
             + "/"
@@ -257,6 +256,7 @@ class LeRobotDataset:
         )
 
     def _query_data(
+        self,
         columns: str,
         data_path: str,
         pad_column: str | None = None,
@@ -282,6 +282,7 @@ class LeRobotDataset:
         """)
 
     def _query_video(
+        self,
         episode_chunk: int,
         video_key: str,
         episode_index,
