@@ -198,7 +198,7 @@ class LeRobotDataset:
             {
                 k: v[0]
                 for k, v in self._con.query(f"FROM '{self._base}/meta/info.json';")
-                .arrow()
+                .fetch_arrow_table()
                 .to_pydict()
                 .items()
             },
@@ -321,7 +321,7 @@ class LeRobotDataset:
           SELECT max("cumsum_length")::BIGINT AS "length"
           FROM "episodes";
         """)
-            .arrow()["length"][0]
+            .fetch_arrow_table()["length"][0]
             .as_py()
         )
 
@@ -381,7 +381,7 @@ class LeRobotDataset:
                 self._con.query(f"""
                 SELECT "content" FROM read_blob('{video_path}');
                 """)
-                .arrow()["content"][0]
+                .fetch_arrow_table()["content"][0]
                 .as_py()
             )
             if video_path.startswith("hf://")
@@ -443,7 +443,7 @@ class LeRobotDataset:
             pad_column="observation_is_pad",
             frame_index=frame_index,
             n_steps=self.n_observation,
-        ).arrow()
+        ).fetch_arrow_table()
 
         action = self._query_data(
             columns=self._action_columns,
@@ -451,7 +451,7 @@ class LeRobotDataset:
             pad_column="action_is_pad",
             frame_index=frame_index,
             n_steps=self.n_action,
-        ).arrow()
+        ).fetch_arrow_table()
 
         item = (
             {
