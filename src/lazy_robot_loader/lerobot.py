@@ -61,12 +61,26 @@ class Feature:
 
 def to_array(
     ca: pa.ChunkedArray,
-    dtype: str | None = None,
+    dtype: DTypeLike | None = None,
 ) -> Shaped[np.ndarray, "..."]:
-    # Since `to_numpy()` method converts pa.(FixedSize)ListArray to
-    # np.ndarray of dtype='object', we first convert to python
-    # (nested) list by `pylist()` method.
-    # This might be inefficient.
+    """
+    Convert to NumPy
+
+    Parameters
+    ----------
+    ca : pyarrow.ChunkedArray
+    dtype: numpy.typing.DTypeLike, optional
+
+    Returns
+    -------
+    numpy.ndarray
+
+    Notes
+    -----
+    Since `to_numpy()` method converts pa.(FixedSize)ListArray to
+    np.ndarray of dtype='object', we first convert to python
+    (nested) list by `pylist()` method.
+    """
     return np.asarray(
         ca.pylist(),
         dtype=dtype,
