@@ -90,7 +90,7 @@ def query_video(
     con: duckdb.DuckDBPyConnection,
     video_path: str,
     timestamp: Float[np.ndarray, " N"],
-) -> Integer[np.ndarray, "N H W 3"]:
+) -> Integer[np.ndarray, "N H W C=3"]:
     """
     Query Video Frames
 
