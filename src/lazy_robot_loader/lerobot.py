@@ -269,6 +269,17 @@ class LeRobotDataset:
             )
         )
 
+    def _video_path(self, episode_index: int, video_key: str) -> str:
+        return (
+            self._base
+            + "/"
+            + self._info["video_path"].format(
+                episode_chunk=episode_index // self._info["chunk_size"],
+                video_key=video_key,
+                episode_index=episode_index,
+            )
+        )
+
     def _query_data(
         self,
         columns: str,
@@ -297,21 +308,9 @@ class LeRobotDataset:
 
     def _query_video(
         self,
-        episode_chunk: int,
-        video_key: str,
-        episode_index,
+        video_path: str,
         timestamp: Integer[np.ndarray, "N"]
     ) -> Integer[np.ndarray, "N H W C"]:
-        video_path = (
-            self._base
-            + "/"
-            + self._info["video_path"].format(
-                episode_chunk=episode_chunk,
-                video_key=video_key,
-                episode_index=episode_index,
-            )
-        )
-
         v = (
             io.BytesIO(
                 self._con.query(f"""
@@ -370,8 +369,6 @@ class LeRobotDataset:
         """).fetchnumpy()
 
         episode_index: int = ep["episode_index"][0]
-        episode_chunk: int = episode_index // self._info["chunks_size"]
-
         data_path = self._data_path(episode_index)
 
         f_idx: int = ep["frame_index"][0]
@@ -429,12 +426,13 @@ class LeRobotDataset:
         assert len(timestamp) > 0, f"timestamp is empty: {f_idx}"
 
         videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
-            k: self._query_video(
-                episode_chunk=episode_chunk,
-                video_key=k,
-                episode_index=episode_index,
+            video_key: self._query_video(
+                video_path=self._video_path(
+                    episode_index=episode_index,
+                    video_key=video_key,
+                ),
                 timestamp=timestamp,
-            ) for k in self._video_keys
+            ) for video_key in self._video_keys
         }
 
         item |= videos
