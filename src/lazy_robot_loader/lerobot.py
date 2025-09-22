@@ -1,4 +1,5 @@
 from __future__ import annotations
+from dataclasses import dataclass
 import io
 import os
 import pathlib
@@ -7,6 +8,7 @@ from typing import cast, Any, TYPE_CHECKING, TypedDict
 import av
 import duckdb
 import numpy as np
+from numpy.typing import DTypeLike
 import pyarrow as pa
 
 if TYPE_CHECKING:
@@ -49,6 +51,12 @@ class LeRobotDatasetInfo(TypedDict):
     data_path: str
     video_path: str
     features: dict[str, LeRobotDatasetFeature]
+
+
+@dataclass
+class Feature:
+    shape: tuple[int, ...]
+    dtype: DTypeLike
 
 
 def to_array(
@@ -171,21 +179,21 @@ class LeRobotDataset:
                 f"Only v2.0 and v2.1 are supported, got {version}"
             )
 
-        self.features = {
-            k: {
-                "shape": (self.n_observation, *v["shape"])
+        self.features: dict[str, Feature] = {
+            k: Feature(
+                shape=(self.n_observation, *v["shape"])
                 if k.startswith("observation")
                 else (self.n_action, *v["shape"])
                 if k.startswith("action")
                 else v["shape"],
-                "dtype": v["dtype"]
+                dtype=v["dtype"]
                 if v["dtype"] not in ["video", "image"]
                 else "uint8",
-            }
+            )
             for k, v in self._info["features"].items()
         } | {
-            "observation_is_pad": {"shape": (self.n_observation,), "dtype": "bool"},
-            "action_is_pad": {"shape": (self.n_action,), "dtype": "bool"},
+            "observation_is_pad": Feature(shape=(self.n_observation,), dtype="bool"),
+            "action_is_pad": Feature(shape=(self.n_action,), dtype="bool"),
         }
 
         self._video_keys = [
