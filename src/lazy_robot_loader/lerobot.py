@@ -361,7 +361,6 @@ class LeRobotDataset:
         ep: dict[str, np.ndarray] = self._con.query(f"""
         SELECT
           e."episode_index" AS "episode_index",
-          e."length" AS "length",
           b."idx" - (e."cumsum_length" - e."length") AS "frame_index",
         FROM (SELECT {idx} AS "idx") b
         ASOF JOIN "episodes" e
