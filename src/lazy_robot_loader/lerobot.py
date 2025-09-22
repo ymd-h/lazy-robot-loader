@@ -369,9 +369,9 @@ class LeRobotDataset:
         """).fetchnumpy()
 
         episode_index: int = ep["episode_index"][0]
-        data_path = self._data_path(episode_index)
-
         frame_index: int = ep["frame_index"][0]
+
+        data_path = self._data_path(episode_index)
 
         observation = self._query_data(
             columns="COLUMNS('observation.*')",
