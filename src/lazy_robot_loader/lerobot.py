@@ -254,7 +254,7 @@ class LeRobotDataset:
         pad_column: str | None = None,
         frame_index: int = 0,
         n_steps: int = 1,
-    ) -> pa.Table:
+    ) -> duckdb.DuckDBPyRelation:
         pad: str = (
             f"""e."frame_index" != d."frame_index" AS "{pad_column}","""
             if pad_column is not None else ""
@@ -271,7 +271,7 @@ class LeRobotDataset:
         ) e ASOF JOIN '{data_path}' d
         ON e."frame_index" >= d."frame_index"
         ORDER BY "frame_index";
-        """).arrow()
+        """)
 
     def _query_video(
         episode_chunk: int,
@@ -359,7 +359,7 @@ class LeRobotDataset:
             pad_column="observation_is_pad",
             frame_index=f_idx,
             n_steps=self.n_observation,
-        )
+        ).arrow()
 
         action = self._query_data(
             columns="COLUMNS('action.*')",
@@ -367,7 +367,7 @@ class LeRobotDataset:
             pad_column="action_is_pad",
             frame_index=f_idx,
             n_steps=self.n_action,
-        )
+        ).arrow()
 
         item = (
             {
@@ -396,13 +396,13 @@ class LeRobotDataset:
             }
         )
 
-        timestamp = self._con.query(f"""
-        SELECT "timestamp"
-        FROM (
-          SELECT {f_idx} + unnest(range({self.n_observation})) AS "frame_index"
-        ) e ASOF JOIN '{data_path}' d
-        ON e."frame_index" >= d."frame_index";
-        """).fetchnumpy()["timestamp"]
+        timestamp = self._query_data(
+            columns='"timestamp"',
+            data_path=data_path,
+            pad_column=None,
+            frame_index=f_idx,
+            n_steps=self.n_observation,
+        ).fetchnumpy()["timestamp"]
         assert len(timestamp) > 0, f"timestamp is empty: {f_idx}"
 
         videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
