@@ -146,6 +146,7 @@ source = { editable = "." }
 dependencies = [
     { name = "av" },
     { name = "duckdb" },
+    { name = "jaxtyping" },
     { name = "numpy", version = "2.2.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "numpy", version = "2.3.3", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
     { name = "pyarrow" },
@@ -154,7 +155,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "beartype" },
-    { name = "jaxtyping" },
     { name = "pytest" },
     { name = "pytest-benchmark" },
     { name = "ruff" },
@@ -165,6 +165,7 @@ dev = [
 requires-dist = [
     { name = "av", specifier = ">=15.1.0" },
     { name = "duckdb", specifier = ">=1.4.0" },
+    { name = "jaxtyping", specifier = ">=0.3.2" },
     { name = "numpy", specifier = ">=2" },
     { name = "pyarrow", specifier = ">=21.0.0" },
 ]
@@ -172,7 +173,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "beartype", specifier = ">=0.21.0" },
-    { name = "jaxtyping", specifier = ">=0.3.2" },
     { name = "pytest", specifier = ">=8.4.2" },
     { name = "pytest-benchmark", specifier = ">=5.1.0" },
     { name = "ruff", specifier = ">=0.13.1" },

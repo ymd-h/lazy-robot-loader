@@ -11,8 +11,7 @@ import numpy as np
 from numpy.typing import DTypeLike
 import pyarrow as pa
 
-if TYPE_CHECKING:
-    from jaxtyping import Integer, Shaped
+from jaxtyping import Integer, Shaped
 
 
 class LeRobotDatasetFeature(TypedDict):
