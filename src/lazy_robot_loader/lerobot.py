@@ -371,13 +371,13 @@ class LeRobotDataset:
         episode_index: int = ep["episode_index"][0]
         data_path = self._data_path(episode_index)
 
-        f_idx: int = ep["frame_index"][0]
+        frame_index: int = ep["frame_index"][0]
 
         observation = self._query_data(
             columns="COLUMNS('observation.*')",
             data_path=data_path,
             pad_column="observation_is_pad",
-            frame_index=f_idx,
+            frame_index=frame_index,
             n_steps=self.n_observation,
         ).arrow()
 
@@ -385,7 +385,7 @@ class LeRobotDataset:
             columns="COLUMNS('action.*')",
             data_path=data_path,
             pad_column="action_is_pad",
-            frame_index=f_idx,
+            frame_index=frame_index,
             n_steps=self.n_action,
         ).arrow()
 
@@ -409,7 +409,7 @@ class LeRobotDataset:
                 for k, v in self._con.query(f"""
                 SELECT "{'","'.join(self._extra_keys)}",
                 FROM '{data_path}'
-                WHERE "frame_index" = {f_idx};
+                WHERE "frame_index" = {frame_index};
                 """)
                 .fetchnumpy()
                 .items()
@@ -420,10 +420,10 @@ class LeRobotDataset:
             columns='"timestamp"',
             data_path=data_path,
             pad_column=None,
-            frame_index=f_idx,
+            frame_index=frame_index,
             n_steps=self.n_observation,
         ).fetchnumpy()["timestamp"]
-        assert len(timestamp) > 0, f"timestamp is empty: {f_idx}"
+        assert len(timestamp) > 0, f"timestamp is empty: {frame_index}"
 
         videos: dict[str, Integer[np.ndarray, "{self.n_observation} H W C"]] = {
             video_key: self._query_video(
