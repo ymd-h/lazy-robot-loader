@@ -321,14 +321,17 @@ class LeRobotDataset:
 
 
     def __getitem__(
-        self, idx: Integer[Any, ""]
+        self, idx: Integer[Any, ""] | int,
     ) -> dict[str, Shaped[np.ndarray, "..."]]:
+        if not isinstance(idx, int):
+            idx = np.asarray(idx).item(0)
+
         ep: dict[str, np.ndarray] = self._con.query(f"""
         SELECT
           e."episode_index" AS "episode_index",
           e."length" AS "length",
           b."idx" - (e."cumsum_length" - e."length") AS "frame_index",
-        FROM (SELECT {idx.item()} AS "idx") b
+        FROM (SELECT {idx} AS "idx") b
         ASOF JOIN "episodes" e
         ON b."idx" < e."cumsum_length";
         """).fetchnumpy()
