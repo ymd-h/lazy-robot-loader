@@ -330,7 +330,7 @@ class LeRobotDataset:
             self._base
             + "/"
             + self._info["data_path"].format(
-                episode_chunk=episode_index // self._info["chunk_size"],
+                episode_chunk=episode_index // self._info["chunks_size"],
                 episode_index=episode_index,
             )
         )
@@ -340,7 +340,7 @@ class LeRobotDataset:
             self._base
             + "/"
             + self._info["video_path"].format(
-                episode_chunk=episode_index // self._info["chunk_size"],
+                episode_chunk=episode_index // self._info["chunks_size"],
                 video_key=video_key,
                 episode_index=episode_index,
             )
