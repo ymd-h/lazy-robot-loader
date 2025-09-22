@@ -286,7 +286,7 @@ class LeRobotDataset:
         episode_chunk: int,
         video_key: str,
         episode_index,
-        timestamps: Integer[np.ndarray, "N"]
+        timestamp: Integer[np.ndarray, "N"]
     ) -> Integer[np.ndarray, "N H W C"]:
         video_path = (
             self._base
