@@ -369,7 +369,7 @@ class LeRobotDataset:
         CREATE TEMP TABLE "episodes" AS (
           SELECT
             *,
-            sum("length") OVER (
+            sum("length"::BIGINT) OVER (
               ORDER BY "episode_index" ASC
               RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
             ) AS "cumsum_length",
@@ -380,7 +380,7 @@ class LeRobotDataset:
 
         self._length: int = (
             self._con.query("""
-          SELECT max("cumsum_length")::BIGINT AS "length"
+          SELECT max("cumsum_length"::BIGINT) AS "length"
           FROM "episodes";
         """)
             .fetch_arrow_table()["length"][0]
@@ -445,14 +445,16 @@ class LeRobotDataset:
         ep: dict[str, np.ndarray] = self._con.query(f"""
         SELECT
           e."episode_index" AS "episode_index",
-          b."idx" - (e."cumsum_length" - e."length") AS "frame_index",
-        FROM (SELECT {idx} AS "idx") b
+          (b."idx" - (e."cumsum_length" - e."length"))::BIGINT AS "frame_index",
+        FROM (SELECT {idx}::BIGINT AS "idx") b
         ASOF JOIN "episodes" e
         ON b."idx" < e."cumsum_length";
         """).fetchnumpy()
 
-        episode_index: int = ep["episode_index"][0]
-        frame_index: int = ep["frame_index"][0]
+        episode_index: int = ep["episode_index"].item(0)
+        frame_index: int = ep["frame_index"].item(0)
+        assert isinstance(episode_index, int)
+        assert isinstance(frame_index, int)
 
         data_path = self._data_path(episode_index)
 
