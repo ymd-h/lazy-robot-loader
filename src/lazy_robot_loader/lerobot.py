@@ -200,9 +200,7 @@ class LeRobotDataset:
                 else (self.n_action, *v["shape"])
                 if k.startswith("action")
                 else v["shape"],
-                dtype=v["dtype"]
-                if v["dtype"] not in ["video", "image"]
-                else "uint8",
+                dtype=v["dtype"] if v["dtype"] not in ["video", "image"] else "uint8",
             )
             for k, v in self._info["features"].items()
         } | {
@@ -255,7 +253,8 @@ class LeRobotDataset:
             self._con.query("""
           SELECT max("cumsum_length")::BIGINT AS "length"
           FROM "episodes";
-        """).arrow()["length"][0]
+        """)
+            .arrow()["length"][0]
             .as_py()
         )
 
@@ -290,7 +289,8 @@ class LeRobotDataset:
     ) -> duckdb.DuckDBPyRelation:
         pad: str = (
             f"""e."frame_index" != d."frame_index" AS "{pad_column}","""
-            if pad_column is not None else ""
+            if pad_column is not None
+            else ""
         )
 
         # We use AsOf Join since frame_index might exceed episode length.
@@ -307,9 +307,7 @@ class LeRobotDataset:
         """)
 
     def _query_video(
-        self,
-        video_path: str,
-        timestamp: Integer[np.ndarray, "N"]
+        self, video_path: str, timestamp: Integer[np.ndarray, " N"]
     ) -> Integer[np.ndarray, "N H W C"]:
         v = (
             io.BytesIO(
@@ -351,9 +349,9 @@ class LeRobotDataset:
 
             return np.stack(imgs)
 
-
     def __getitem__(
-        self, idx: Integer[Any, ""] | int,
+        self,
+        idx: Integer[Any, ""] | int,
     ) -> dict[str, Shaped[np.ndarray, "..."]]:
         if not isinstance(idx, int):
             idx = np.asarray(idx).item(0)
@@ -432,7 +430,8 @@ class LeRobotDataset:
                     video_key=video_key,
                 ),
                 timestamp=timestamp,
-            ) for video_key in self._video_keys
+            )
+            for video_key in self._video_keys
         }
 
         item |= videos
