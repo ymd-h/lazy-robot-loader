@@ -22,6 +22,7 @@ dependencies = [
 
 [dependency-groups]
 dev = [
+    "beartype>=0.21.0",
     "jaxtyping>=0.3.2",
     "pytest>=8.4.2",
     "pytest-benchmark>=5.1.0",
