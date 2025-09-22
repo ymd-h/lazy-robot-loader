@@ -2,7 +2,8 @@ from dataclasses import dataclass
 import io
 import os
 import pathlib
-from typing import cast, Any, TYPE_CHECKING, TypedDict
+import re
+from typing import cast, Any, TYPE_CHECKING, TypedDict, Iterable
 
 import av
 import duckdb
@@ -95,6 +96,9 @@ class LeRobotDataset:
         episodes: tuple[int, ...] | None = None,
         n_observation: int = 1,
         n_action: int = 1,
+        observation_regexp: str | re.Pattern = "observation.*",
+        action_regexp: str | re.Pattern = "action.*",
+        extra_keys: Iterable[str] = tuple(),
         cache_dir: str | pathlib.Path | None = None,
         proxy_url: str | None = None,
         proxy_username: str | None = None,
@@ -111,6 +115,20 @@ class LeRobotDataset:
             Local Directory Path
         episodes: tuple[int, ...], optional
             Episodes to be used, instead of all of them.
+        n_observation: int, optional
+            Number of steps for observation (model input).
+            Default is 1.
+        n_action: int, optional
+            Number of steps for action (model output).
+            Default is 1.
+        observation_regexp: str | re.Pattern, optional
+            Regular Expression for observation (model input).
+            Default is "observation.*".
+        action_regexp: str | re.Pattern, optional
+            Regular Expression for action (model output).
+            Default is "action.*".
+        extra_keys: Iterable[str], optional
+            Extra keys to be queried. No keys are queried by default.
         cache_dir: str, optional
             Cache Directory.
         proxy_url: str, optional
@@ -126,6 +144,8 @@ class LeRobotDataset:
             Unless only one of ``repo_id`` and ``local_path`` is specified.
         NotImplementedError
             When dataset is not supported version.
+        ValueError
+            When there are no observations or actions found.
         """
         self.n_observation = n_observation
         self.n_action = n_action
@@ -192,29 +212,67 @@ class LeRobotDataset:
                 f"Only v2.0 and v2.1 are supported, got {version}"
             )
 
-        self.features: dict[str, Feature] = {
-            k: Feature(
-                shape=(self.n_observation, *v["shape"])
-                if k.startswith("observation")
-                else (self.n_action, *v["shape"])
-                if k.startswith("action")
-                else v["shape"],
-                dtype=v["dtype"] if v["dtype"] not in ["video", "image"] else "uint8",
-            )
-            for k, v in self._info["features"].items()
-        } | {
-            "observation_is_pad": Feature(shape=(self.n_observation,), dtype="bool"),
-            "action_is_pad": Feature(shape=(self.n_action,), dtype="bool"),
-        }
+        if isinstance(observation_regexp, str):
+            observation_regexp = re.compile(observation_regexp)
 
-        self._video_keys = [
-            k for k, v in self._info["features"].items() if v["dtype"] == "video"
-        ]
-        self._extra_keys = [
-            k
-            for k in self.features.keys()
-            if (not k.startswith("observation")) and (not k.startswith("action"))
-        ]
+        if isinstance(action_regexp, str):
+            action_regexp = re.compile(action_regexp)
+
+        self.features: dict[str, Feature] = {}
+        self.observation_data_keys: list[str] = []
+        self.observation_video_keys: list[str] = []
+        self.action_keys: list[str] = []
+        self.extra_keys: list[str] = [key for key in extra_keys]
+
+        for key, feature in self._info["features"].items():
+            shape: list[int] = feature["shape"]
+            dtype: str = feature["dtype"]
+
+            if observation_regexp.fullmatch(key):
+                self.features[key] = Feature(
+                    shape=(self.n_observation, *feature),
+                    dtype=dtype if dtype not in ["video", "image"] else "uint8",
+                )
+
+                if dtype != "video":
+                    self.observation_data_keys.append(key)
+                else:
+                    self.observation_video_keys.append(key)
+
+                continue
+
+            if action_regexp.fullmatch(key):
+                self.features[key] = Feature(
+                    shape=(self.n_action, *feature),
+                    dtype=dtype,
+                )
+
+                self.action_keys.append(key)
+                continue
+
+            if key in self.extra_keys:
+                self.features[key] = Feature(
+                    shape=shape,
+                    dtype=dtype,
+                )
+
+        self.features.update(
+            observation_is_pad=Feature(shape=(self.n_observation,), dtype="bool"),
+            action_is_pad=Feature(shape=(self.n_action,), dtype="bool"),
+        )
+
+        if len(self.observation_data_keys) + len(self.observation_video_keys) == 0:
+            raise ValueError("Observation must not be empty.")
+
+        if len(self.action_keys) == 0:
+            raise ValueError("Action must not be empty.")
+
+
+        self._observation_columns: str = '"' + '","'.join(self.observation_data_keys) + '"'
+        self._action_columns: str = '"' + '","'.join(self.action_keys) + '"'
+        self._extra_columns: str = (
+            ('"' + '","'.join(self.extra_keys) + '"') if len(self.extra_keys) > 0 else ""
+        )
 
         try:
             self._con.query(f"""
@@ -370,7 +428,7 @@ class LeRobotDataset:
         data_path = self._data_path(episode_index)
 
         observation = self._query_data(
-            columns="COLUMNS('observation.*')",
+            columns=self._observation_columns,
             data_path=data_path,
             pad_column="observation_is_pad",
             frame_index=frame_index,
@@ -378,7 +436,7 @@ class LeRobotDataset:
         ).arrow()
 
         action = self._query_data(
-            columns="COLUMNS('action.*')",
+            columns=self._action_columns,
             data_path=data_path,
             pad_column="action_is_pad",
             frame_index=frame_index,
@@ -403,7 +461,11 @@ class LeRobotDataset:
             | {
                 k: np.asarray(v, dtype=self.features[k].dtype)
                 for k, v in self._con.query(f"""
-                SELECT "{'","'.join(self._extra_keys)}",
+                SELECT
+                  "episode_index",
+                  "frame_index",
+                  "timestamp",
+                  {self._extra_columns}
                 FROM '{data_path}'
                 WHERE "frame_index" = {frame_index};
                 """)
@@ -430,7 +492,7 @@ class LeRobotDataset:
                 ),
                 timestamp=timestamp,
             )
-            for video_key in self._video_keys
+            for video_key in self.observation_video_keys
         }
 
         item |= videos
