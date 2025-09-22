@@ -90,7 +90,7 @@ def query_video(
     con: duckdb.DuckDBPyConnection,
     video_path: str,
     timestamp: Float[np.ndarray, " N"],
-) -> Integer[np.ndarray, "N H W C"]:
+) -> Integer[np.ndarray, "N H W 3"]:
     """
     Query Video Frames
 
@@ -105,7 +105,7 @@ def query_video(
 
     Returns
     -------
-    N steps of RGB frames. The shape is (N, H, W, C)
+    N steps of RGB frames. The shape is (N, H, W, C=3)
     """
     v = (
         io.BytesIO(
@@ -131,8 +131,8 @@ def query_video(
         )
 
         it = iter(container.decode(video=0))
-        imgs: list[Integer[np.ndarray, "H W C"]] = []
-        img: Integer[np.ndarray, "H W C"] | None = None
+        imgs: list[Integer[np.ndarray, "H W 3"]] = []
+        img: Integer[np.ndarray, "H W 3"] | None = None
         for t in timestamp:
             for f in it:
                 if t <= f.time:
