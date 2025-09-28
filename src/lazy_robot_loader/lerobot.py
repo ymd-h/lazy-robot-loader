@@ -346,7 +346,6 @@ class LeRobotDataset:
                 .items()
             },
         )
-        assert isinstance(self._info, dict), f"{self._info}"
 
         version = self._info["codebase_version"]
         if version not in ["v2.0", "v2.1"]:
