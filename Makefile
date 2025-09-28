@@ -16,6 +16,6 @@ ci:
 	echo "\n```\n## Ruff Format Check" >> $OUT
 	uv run ruff format --check >> $OUT
 	echo "\n```\n## pytest\n```\n" >> $OUT
-	uv run pytest -p no:cacheprovider >> $OUT
+	uv run pytest --cov-report=term-missing -p no:cacheprovider >> $OUT
 	echo "\n```\n" >> $OUT
 	uv cache prune --ci
