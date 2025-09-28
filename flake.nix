@@ -15,8 +15,9 @@
   in {
     devShells.default = pkgs.mkShell ({
       packages = with pkgs; [
-        uv
+        actionlint
         gnumake
+        uv
       ];
       buildInputs = libs;
     } // (
