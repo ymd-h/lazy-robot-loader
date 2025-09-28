@@ -25,4 +25,4 @@ jobs:
           restore-keys: |
             uv-${{ runner.os }}-${{ hashFiles('uv.lock') }}
             uv-${{ runner.os }}
-      - run: nix develop -c make ci
+      - run: nix develop -c make OUT=$GITHUB_STEP_SUMMARY ci
