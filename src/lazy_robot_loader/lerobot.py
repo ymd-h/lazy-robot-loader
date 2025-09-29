@@ -347,7 +347,7 @@ class LeRobotDataset:
             },
         )
 
-        version = self._info["codebase_version"]
+        version = self.version
         if version not in ["v2.0", "v2.1"]:
             raise NotImplementedError(
                 f"Only v2.0 and v2.1 are supported, got {version}"
@@ -462,6 +462,13 @@ class LeRobotDataset:
             .fetch_arrow_table()["length"][0]
             .as_py()
         )
+
+    @property
+    def version(self) -> str:
+        """
+        LeRobot Dataset format version
+        """
+        return self._info["codebase_version"]
 
     def _data_path(self, episode_index: int) -> str:
         return (
