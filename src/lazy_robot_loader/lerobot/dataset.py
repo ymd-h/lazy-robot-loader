@@ -1,10 +1,9 @@
 from collections.abc import Iterable
-from dataclasses import dataclass
 import io
 import os
 import pathlib
 import re
-from typing import cast, Any, TypedDict
+from typing import cast, Any
 
 import av
 import duckdb
@@ -14,49 +13,9 @@ import pyarrow as pa
 
 from jaxtyping import Integer, Float, Shaped
 
-
-class LeRobotDatasetFeature(TypedDict):
-    dtype: str
-    shape: list[int]
-    names: list[str] | None
-
-
-LeRobotDatasetVideoFeatureInfo = TypedDict(
-    "LeRobotDatasetVideoFeatureInfo",
-    {
-        "video.fps": int,
-        "video.codec": str,
-        "video.pix_fmt": str,
-        "video.is_depth_map": bool,
-        "has_audio": bool,
-    },
-)
-
-
-class LeRobotDatasetVideoFeature(LeRobotDatasetFeature):
-    info: LeRobotDatasetVideoFeatureInfo
-
-
-class LeRobotDatasetInfo(TypedDict):
-    codebase_version: str
-    robot_type: str
-    total_episodes: int
-    total_frames: int
-    total_tasks: int
-    total_videos: int
-    total_chunks: int
-    chunks_size: int
-    fps: int
-    splits: dict[str, str]
-    data_path: str
-    video_path: str
-    features: dict[str, LeRobotDatasetFeature]
-
-
-@dataclass
-class Feature:
-    shape: tuple[int, ...]
-    dtype: DTypeLike
+from lazy_robot_loader.core import Feature
+from lazy_robot_loader.lerobot.core import LeRobotDatasetInfo
+from lazy_robot_loader.lerobot.query import agg_feature_stats, agg_vector
 
 
 def to_array(
@@ -469,6 +428,41 @@ class LeRobotDataset:
         LeRobot Dataset format version
         """
         return self._info["codebase_version"]
+
+    def _load_stats(self) -> None:
+        version: str = self.version
+
+        match version:
+            case "v2.0":
+                self._con.query(f"""
+                CREATE OR REPLACE TEMP TABLE stats AS (
+                  FROM '{self._base}/meta/stats.json'
+                );
+                """)
+            case "v2.1":
+                columns = ",".join(
+                    (
+                        f"""struct_pack(
+                        "max"={agg_vector("max", k + '."max"', v.shape[0])},
+                        "min"={agg_vector("min", k + '."min"', v.shape[0])},
+                        "mean"={mu},
+                        "std"={sigma},
+                        ) AS {k}"""
+                        for k, v, mu, sigma in (
+                            (kk, vv, *agg_feature_stats(kk, vv))
+                            for kk, vv in self.features.item()
+                        )
+                    )
+                )
+
+                self._con.query(f"""
+                CREATE OR REPLACE TEMP TABLE stats AS (
+                  SELECT {columns}
+                  FROM '{self._base}/meta/episodes_stats.jsonl'
+                );
+                """)
+            case _:
+                raise NotImplementedError(f"Version {version} is not supported.")
 
     def _data_path(self, episode_index: int) -> str:
         return (
