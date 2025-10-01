@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import itertools
 
-from lazy_robot_loader.lerobot.core import LeRobotDatasetFeature
-
 
 def agg_vector(
     agg: str,
@@ -31,9 +29,9 @@ def agg_vector(
         Element-wise Aggregation Expression
     """
     return (
-        "list_value("
-        + ",".join((f"""{agg}[{i + 1}]({col}) OVER {window}""" for i in range(length)))
-        + ")"
+        "["
+        + ",".join((f"""{agg}({col}[{i + 1}]) OVER {window}""" for i in range(length)))
+        + "]"
     )
 
 
@@ -53,22 +51,18 @@ def agg_stats(
     return mu_agg, sigma_agg
 
 
-def agg_vector_stats(
-    mu: str,
-    sigma: str,
-    count: str,
+def agg_data_stats(
+    key: str,
     length: int,
     window: str = "()",
-) -> tuple[str, str]:
+) -> str:
     """
-    Aggregate Stats for List or Array
+    Aggregate Stats for Data
 
     Parameters
     ----------
-    mu : str
-        Mean Column
-    sigma : str
-        Standard Deviation Column
+    key : str
+        Feature Key for Data
     length : int
         Length of List or Array
     window : str
@@ -76,44 +70,45 @@ def agg_vector_stats(
 
     Returns
     -------
-    mu_agg : str
-    sigma_agg : str
+    str
+        Aggregation Query Expression
     """
     m, s = itertools.tee(
         (
             agg_stats(
-                mu + f"[{i + 1}]",
-                sigma + f"[{i + 1}]",
-                count,
+                f'"stats"."{key}"."mean"[{i + 1}]',
+                f'"stats"."{key}"."std"[{i + 1}]',
+                f'"stats"."{key}"."count"[1]',
                 window,
             )
             for i in range(length)
         )
     )
+    mu = f"[{','.join((mi for (mi, _) in m))}]"
+    sigma = f"[{','.join((si for (_, si) in s))}]"
 
-    return (
-        f"list_value({','.join(m)})",
-        f"list_value({','.join(s)})",
-    )
+    max_ = agg_vector("max", f'"stats"."{key}"."max"', length)
+    min_ = agg_vector("min", f'"stats"."{key}"."min"', length)
+
+    return f"""struct_pack(
+      "max":={max_},
+      "min":={min_},
+      "mean":={mu},
+      "std":={sigma}
+    )"""
 
 
 def agg_image_stats(
-    mu: str,
-    sigma: str,
-    count: str,
+    key: str,
     window: str = "()",
-) -> tuple[str, str]:
+) -> str:
     """
     Aggregate Stats for Image
 
     Parameters
     ----------
-    mu : str
-        Mean Column. Shape is (H=1, W=1, C=3)
-    sigma : str
-        Standard Deviation Column. Shape is (H=1, W=1, C=3)
-    count : str
-        Counts of Each Group Column
+    key : str
+        Feature Key for Image
     window : str, optional
         WINDOW Clause
 
@@ -130,59 +125,24 @@ def agg_image_stats(
     m, s = itertools.tee(
         (
             agg_stats(
-                mu + f"[{i + 1}][1][1]",
-                sigma + f"[{i + 1}][1][1]",
-                count,
+                f'"stats"."{key}"."mean"[{i + 1}][1][1]',
+                f'"stats"."{key}"."std"[{i + 1}][1][1]',
+                f'"stats"."{key}"."count"[1]',
                 window,
             )
             for i in range(3)
         )
     )
 
-    return (
-        f"list_value({','.join((f'[[{mi}]]' for mi in m))})",
-        f"list_value({','.join((f'[[{si}]]' for si in s))})",
-    )
+    mu = f"[{','.join((f'[[{mi}]]' for (mi, _) in m))}]"
+    sigma = f"[{','.join((f'[[{si}]]' for (_, si) in s))}]"
 
+    max_ = agg_vector("max", f'"stats"."{key}"."max"[1][1]', 1)
+    min_ = agg_vector("min", f'"stats"."{key}"."min"[1][1]', 1)
 
-def agg_feature_stats(
-    key: str,
-    feature: LeRobotDatasetFeature,
-    window: str = "()",
-) -> tuple[str, str]:
-    """
-    Aggregate Stats for Feature
-
-    Parameters
-    ----------
-    key : str
-        Feature Key
-    feature : LeRobotDatasetFeature
-        Feature
-    window : str, optional
-        WINDOW Clause
-
-    Returns
-    -------
-    mu_agg : str
-    sigma_agg : str
-    """
-    mu = f'"stats"."{key}"."mean"'
-    sigma = f'"stats"."{key}"."std"'
-    count = f'"stats"."{key}"."count"[1]'
-
-    if feature["dtype"] in ["image", "video"]:
-        return agg_image_stats(
-            mu,
-            sigma,
-            count,
-            window,
-        )
-
-    return agg_vector_stats(
-        mu,
-        sigma,
-        count,
-        feature["shape"][0],
-        window,
-    )
+    return f"""struct_pack(
+      "max":={max_},
+      "min":={min_},
+      "mean":={mu},
+      "std":={sigma}
+    )"""

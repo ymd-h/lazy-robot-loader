@@ -15,7 +15,7 @@ from jaxtyping import Integer, Float, Shaped
 
 from lazy_robot_loader.core import Feature
 from lazy_robot_loader.lerobot.core import LeRobotDatasetInfo
-from lazy_robot_loader.lerobot.query import agg_feature_stats, agg_vector
+from lazy_robot_loader.lerobot.query import agg_data_stats, agg_image_stats
 
 
 def to_array(
@@ -425,6 +425,8 @@ class LeRobotDataset:
             .as_py()
         )
 
+        self._load_stats()
+
     @property
     def version(self) -> str:
         """
@@ -432,29 +434,38 @@ class LeRobotDataset:
         """
         return self._info["codebase_version"]
 
+    @property
+    def stats(self) -> dict:
+        s = self._con.query("FROM stats;").fetch_arrow_table()
+
+        return {c: to_array(s[c], self.features[c].dtype) for c in s.column_names}
+
     def _load_stats(self) -> None:
         version: str = self.version
 
+        keys = (
+            self.observation_data_keys + self.observation_video_keys + self.action_keys
+        )
         match version:
             case "v2.0":
+                columns = '","'.join(keys)
+
                 self._con.query(f"""
                 CREATE OR REPLACE TEMP TABLE stats AS (
-                  FROM '{self._base}/meta/stats.json'
+                  SELECT "{columns}"
+                  FROM (
+                    SELECT "stats".*
+                    FROM '{self._base}/meta/stats.json'
+                  )
                 );
                 """)
             case "v2.1":
                 columns = ",".join(
                     (
-                        f"""struct_pack(
-                        "max"={agg_vector("max", k + '."max"', v.shape[0])},
-                        "min"={agg_vector("min", k + '."min"', v.shape[0])},
-                        "mean"={mu},
-                        "std"={sigma},
-                        ) AS {k}"""
-                        for k, v, mu, sigma in (
-                            (kk, vv, *agg_feature_stats(kk, vv))
-                            for kk, vv in self.features.item()
-                        )
+                        agg_image_stats(k) + f' AS "{k}"'
+                        if len(self.features[k].shape) > 2
+                        else agg_data_stats(k, self.features[k].shape[1]) + f' AS "{k}"'
+                        for k in keys
                     )
                 )
 
