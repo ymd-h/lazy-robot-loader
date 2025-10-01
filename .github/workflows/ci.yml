@@ -5,6 +5,10 @@ on: [push, pull_request]
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        py: ["3.10", "3.11", "3.12", "3.13"]
     defaults:
       run:
         shell: bash
@@ -32,4 +36,5 @@ jobs:
           key: lrl-${{ hashFiles('tests/*.py') }}
           restore-keys: |
             lrl-
+      - run: nix develop -c uv python pin ${{ matrix.py }}
       - run: nix develop -c make OUT="$GITHUB_STEP_SUMMARY" ci
