@@ -14,7 +14,11 @@ import pyarrow as pa
 from jaxtyping import Integer, Float, Shaped
 
 from lazy_robot_loader.core import Feature
-from lazy_robot_loader.lerobot.core import LeRobotDatasetInfo
+from lazy_robot_loader.lerobot.core import (
+    LeRobotDatasetInfo,
+    LeRobotDatasetDataStat,
+    LeRobotDatasetImageStat,
+)
 from lazy_robot_loader.lerobot.query import agg_data_stats, agg_image_stats
 
 
@@ -435,10 +439,17 @@ class LeRobotDataset:
         return self._info["codebase_version"]
 
     @property
-    def stats(self) -> dict:
-        s = self._con.query("FROM stats;").fetch_arrow_table()
+    def stats(self) -> dict[str, LeRobotDatasetDataStat | LeRobotDatasetImageStat]:
+        keys = (
+            self.observation_data_keys + self.observation_video_keys + self.action_keys
+        )
 
-        return {c: to_array(s[c], self.features[c].dtype) for c in s.column_names}
+        s: dict[str, LeRobotDatasetDataStat | LeRobotDatasetImageStat] = {}
+        for k in keys:
+            si = self._con.query(f'SELECT "{k}".* FROM stats;').fetch_arrow_table()
+            s[k] = {c: to_array(si[c], self.features[k].dtype) for c in si.column_names}
+
+        return s
 
     def _load_stats(self) -> None:
         version: str = self.version

@@ -1,6 +1,9 @@
 from __future__ import annotations
 from typing import TypedDict
 
+import numpy as np
+from jaxtyping import Float
+
 
 class LeRobotDatasetFeature(TypedDict):
     dtype: str
@@ -38,3 +41,17 @@ class LeRobotDatasetInfo(TypedDict):
     data_path: str
     video_path: str
     features: dict[str, LeRobotDatasetFeature]
+
+
+class LeRobotDatasetDataStat(TypedDict):
+    max: Float[np.ndarray, "N F"]
+    min: Float[np.ndarray, "N F"]
+    mean: Float[np.ndarray, "N F"]
+    std: Float[np.ndarray, "N F"]
+
+
+class LeRobotDatasetImageStat(TypedDict):
+    max: Float[np.ndarray, "N 3 1 1"]
+    min: Float[np.ndarray, "N 3 1 1"]
+    mean: Float[np.ndarray, "N 3 1 1"]
+    std: Float[np.ndarray, "N 3 1 1"]
