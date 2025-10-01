@@ -18,7 +18,7 @@ to load (and download if necessary) [LeRobot](https://huggingface.co/lerobot) Da
 - Meta
   - [X] Info
   - [X] Episodes
-  - [ ] Stats
+  - [X] Stats
 - Source
   - [X] Hugging Face
   - [X] Local Path
