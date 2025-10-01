@@ -447,7 +447,10 @@ class LeRobotDataset:
         s: dict[str, LeRobotDatasetDataStat | LeRobotDatasetImageStat] = {}
         for k in keys:
             si = self._con.query(f'SELECT "{k}".* FROM stats;').fetch_arrow_table()
-            s[k] = {c: to_array(si[c], self.features[k].dtype) for c in si.column_names}
+            s[k] = {
+                c: to_array(si[c], self.features[k].dtype).squeeze(0)
+                for c in si.column_names
+            }
 
         return s
 
