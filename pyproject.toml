@@ -29,6 +29,7 @@ dev = [
     "pytest-cov>=7.0.0",
     "pytest-ruff>=0.5",
     "pytest-ty>=0.1.2",
+    "pytest-xdist>=3.8.0",
     "ruff>=0.13.1",
     "ty>=0.0.1a21",
 ]
@@ -40,6 +41,7 @@ ignore = [
 
 [tool.pytest.ini_options]
 addopts = [
+  "-n=auto",
   "--import-mode=importlib",
   "--jaxtyping-packages=lazy_robot_loader.lerobot,beartype.beartype",
   "--cov=src",
