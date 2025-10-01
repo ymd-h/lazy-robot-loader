@@ -44,14 +44,14 @@ class LeRobotDatasetInfo(TypedDict):
 
 
 class LeRobotDatasetDataStat(TypedDict):
-    max: Float[np.ndarray, "N F"]
-    min: Float[np.ndarray, "N F"]
-    mean: Float[np.ndarray, "N F"]
-    std: Float[np.ndarray, "N F"]
+    max: Float[np.ndarray, " F"]
+    min: Float[np.ndarray, " F"]
+    mean: Float[np.ndarray, " F"]
+    std: Float[np.ndarray, " F"]
 
 
 class LeRobotDatasetImageStat(TypedDict):
-    max: Float[np.ndarray, "N 3 1 1"]
-    min: Float[np.ndarray, "N 3 1 1"]
-    mean: Float[np.ndarray, "N 3 1 1"]
-    std: Float[np.ndarray, "N 3 1 1"]
+    max: Float[np.ndarray, "3 1 1"]
+    min: Float[np.ndarray, "3 1 1"]
+    mean: Float[np.ndarray, "3 1 1"]
+    std: Float[np.ndarray, "3 1 1"]
