@@ -262,8 +262,11 @@ class LeRobotDataset:
             if proxy_password is not None:
                 self._con.query(f"SET http_proxy_password = '{proxy_password}';")
 
-        if cache_dir is None:
-            cache_dir = pathlib.Path.home() / ".cache/lrl"
+        cache_dir = (
+            cache_dir
+            or os.environ.get("LAZY_ROBOT_LOADER_CACHE_DIR")
+            or (pathlib.Path.home() / ".cache/lrl")
+        )
 
         if isinstance(cache_dir, pathlib.Path):
             cache_dir = str(cache_dir)
