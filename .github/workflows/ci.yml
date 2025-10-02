@@ -36,5 +36,11 @@ jobs:
           key: lrl-${{ hashFiles('tests/*.py') }}
           restore-keys: |
             lrl-
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: /home/runner/.duckdb/extensions
+          key: duckdb-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            duckdb-${{ runner.os }}-${{ runner.arch }}
       - run: nix develop -c uv python pin ${{ matrix.py }}
       - run: nix develop -c make OUT="$GITHUB_STEP_SUMMARY" ci
