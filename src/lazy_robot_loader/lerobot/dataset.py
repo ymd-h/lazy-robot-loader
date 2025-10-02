@@ -19,7 +19,7 @@ from lazy_robot_loader.lerobot.core import (
     LeRobotDatasetDataStat,
     LeRobotDatasetImageStat,
 )
-from lazy_robot_loader.lerobot.query import agg_data_stats, agg_image_stats
+from lazy_robot_loader.lerobot.internal.query import agg_data_stats, agg_image_stats
 
 
 def to_array(
