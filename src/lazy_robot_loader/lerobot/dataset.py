@@ -46,6 +46,7 @@ class LeRobotDataset:
         proxy_url: str | None = None,
         proxy_username: str | None = None,
         proxy_password: str | None = None,
+        hf_token: str | None = None,
     ):
         """
         LeRobot Dataset
@@ -80,6 +81,8 @@ class LeRobotDataset:
             Proxy User Name
         proxy_password: str, optional
             Proxy Password
+        hf_token: str, optional
+            Hugging Face Token
 
         Raises
         ------
@@ -103,6 +106,14 @@ class LeRobotDataset:
 
             if proxy_password is not None:
                 self._con.query(f"SET http_proxy_password = '{proxy_password}';")
+
+        if hf_token is not None:
+            self._con.query(f"""
+            CREATE SECRET hf_token (
+              TYPE huggingface,
+              TOKEN '{hf_token}'
+            );
+            """)
 
         cache_dir = (
             cache_dir
