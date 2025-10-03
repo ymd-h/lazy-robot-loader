@@ -8,6 +8,10 @@ from jaxtyping import Integer, Float, Shaped
 import pyarrow as pa
 
 from lazy_robot_loader.core import Feature
+from lazy_robot_loader.lerobot.core import (
+    LeRobotDatasetDataStat,
+    LeRobotDatasetImageStat,
+)
 
 
 def to_array(
@@ -35,6 +39,31 @@ def to_array(
     return np.asarray(
         ca.to_pylist(),
         dtype=dtype,
+    )
+
+
+def get_stat(
+    con: duckdb.DuckDBPyConnection,
+    key: str,
+    feature: Feature,
+) -> LeRobotDatasetDataStat | LeRobotDatasetImageStat:
+    stat = con.query(f'SELECT "{key}".* FROM stats;').fetch_arrow_table()
+
+    s = {c: to_array(stat[c]).squeeze(0) for c in ("max", "min", "mean", "std")}
+
+    if len(feature.shape) > 2:
+        return LeRobotDatasetImageStat(
+            max=s["max"],
+            min=s["min"],
+            mean=s["mean"],
+            std=s["std"],
+        )
+
+    return LeRobotDatasetDataStat(
+        max=s["max"],
+        min=s["min"],
+        mean=s["mean"],
+        std=s["std"],
     )
 
 

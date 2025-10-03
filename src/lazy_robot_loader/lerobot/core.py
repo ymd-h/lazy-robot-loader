@@ -1,4 +1,4 @@
-from __future__ import annotations
+from dataclasses import dataclass
 from typing import TypedDict
 
 import numpy as np
@@ -43,14 +43,16 @@ class LeRobotDatasetInfo(TypedDict):
     features: dict[str, LeRobotDatasetFeature]
 
 
-class LeRobotDatasetDataStat(TypedDict):
+@dataclass
+class LeRobotDatasetDataStat:
     max: Float[np.ndarray, " F"]
     min: Float[np.ndarray, " F"]
     mean: Float[np.ndarray, " F"]
     std: Float[np.ndarray, " F"]
 
 
-class LeRobotDatasetImageStat(TypedDict):
+@dataclass
+class LeRobotDatasetImageStat:
     max: Float[np.ndarray, "3 1 1"]
     min: Float[np.ndarray, "3 1 1"]
     mean: Float[np.ndarray, "3 1 1"]

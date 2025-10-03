@@ -30,7 +30,9 @@ def agg_vector(
     """
     return (
         "["
-        + ",".join((f"""{agg}({col}[{i + 1}]) OVER {window}""" for i in range(length)))
+        + ",".join(
+            (f"""{agg}({col}[{i + 1}]::FLOAT) OVER {window}""" for i in range(length))
+        )
         + "]"
     )
 
@@ -76,8 +78,8 @@ def agg_data_stats(
     m, s = itertools.tee(
         (
             agg_stats(
-                f'"stats"."{key}"."mean"[{i + 1}]',
-                f'"stats"."{key}"."std"[{i + 1}]',
+                f'"stats"."{key}"."mean"[{i + 1}]::FLOAT',
+                f'"stats"."{key}"."std"[{i + 1}]::FLOAT',
                 f'"stats"."{key}"."count"[1]',
                 window,
             )
@@ -125,8 +127,8 @@ def agg_image_stats(
     m, s = itertools.tee(
         (
             agg_stats(
-                f'"stats"."{key}"."mean"[{i + 1}][1][1]',
-                f'"stats"."{key}"."std"[{i + 1}][1][1]',
+                f'"stats"."{key}"."mean"[{i + 1}][1][1]::FLOAT',
+                f'"stats"."{key}"."std"[{i + 1}][1][1]::FLOAT',
                 f'"stats"."{key}"."count"[1]',
                 window,
             )

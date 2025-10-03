@@ -43,5 +43,5 @@ def test_pushT_stats():
 
     for k in v2_0.keys():
         for m in ("min", "max", "mean", "std"):
-            np.testing.assert_allclose(v2_0[k][m], v2_1[k][m])
-            assert v2_0[k][m].ndim in (1, 3)
+            np.testing.assert_allclose(getattr(v2_0[k], m), getattr(v2_1[k], m))
+            assert getattr(v2_0[k], m).ndim in (1, 3)

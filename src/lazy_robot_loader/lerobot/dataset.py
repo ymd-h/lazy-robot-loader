@@ -17,7 +17,7 @@ from lazy_robot_loader.lerobot.core import (
 )
 from lazy_robot_loader.lerobot.internal.query import agg_data_stats, agg_image_stats
 from lazy_robot_loader.lerobot.internal.functional import (
-    to_array,
+    get_stat,
     query_video,
     query_data,
 )
@@ -279,15 +279,7 @@ class LeRobotDataset:
             self.observation_data_keys + self.observation_video_keys + self.action_keys
         )
 
-        s: dict[str, LeRobotDatasetDataStat | LeRobotDatasetImageStat] = {}
-        for k in keys:
-            si = self._con.query(f'SELECT "{k}".* FROM stats;').fetch_arrow_table()
-            s[k] = {
-                c: to_array(si[c], self.features[k].dtype).squeeze(0)
-                for c in si.column_names
-            }
-
-        return s
+        return {k: get_stat(self._con, k, self.features[k]) for k in keys}
 
     def _load_stats(self) -> None:
         version: str = self.version
