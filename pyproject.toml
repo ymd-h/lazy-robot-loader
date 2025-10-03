@@ -22,6 +22,12 @@ dependencies = [
     "pyarrow>=21.0.0",
 ]
 
+[project.urls]
+homepage = "https://github.com/ymd-h/lazy-robot-loader"
+source = "https://github.com/ymd-h/lazy-robot-loader"
+issues = "https://github.com/ymd-h/lazy-robot-loader/issues"
+
+
 [dependency-groups]
 dev = [
     "beartype>=0.21.0",
