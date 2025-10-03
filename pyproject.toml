@@ -7,6 +7,7 @@ name = "lazy-robot-loader"
 version = "0.0.0"
 description = "Lazy DataLoader for LeRobot"
 readme = "README.md"
+license-files = ["LICENSE"]
 classifiers = [
   "Development Status :: 3 - Alpha",
   "License :: OSI Approved :: MIT License",
