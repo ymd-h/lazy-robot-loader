@@ -41,6 +41,12 @@ dev = [
     "ty>=0.0.1a21",
 ]
 
+[tool.uv.build-backend]
+source-include = [
+  "py.typed",
+]
+
+
 [tool.ruff.lint]
 ignore = [
   "F722", # jaxtyping: https://docs.kidger.site/jaxtyping/faq/
