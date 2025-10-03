@@ -37,7 +37,7 @@ def to_array(
     (nested) list by `to_pylist()` method.
     """
     return np.asarray(
-        ca.to_pylist(),
+        ca.to_pylist() if pa.types.is_nested(ca.type) else ca,
         dtype=dtype,
     )
 
