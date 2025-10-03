@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+from logging import getLogger
 import os
 import pathlib
 import re
@@ -25,6 +26,8 @@ from lazy_robot_loader.lerobot.internal.functional import (
 __all__ = [
     "LeRobotDataset",
 ]
+
+logger = getLogger(__file__)
 
 
 class LeRobotDataset:
@@ -110,6 +113,7 @@ class LeRobotDataset:
         if isinstance(cache_dir, pathlib.Path):
             cache_dir = str(cache_dir)
 
+        logger.debug("Cache Dir: %s", cache_dir)
         os.makedirs(os.path.join(cache_dir, "hf"), exist_ok=True)
 
         self._con.query(f"""
@@ -137,6 +141,8 @@ class LeRobotDataset:
                     f"Only one of `repo_id` and `local_path` must be specified, however, both of them are spefified. {repo_id=}, {local_path=}"
                 )
 
+        logger.info("LeRobot Dataset: %s", self._base)
+
         self._info = cast(
             LeRobotDatasetInfo,
             {
@@ -149,6 +155,7 @@ class LeRobotDataset:
         )
 
         version = self.version
+        logger.info("LeRobot Dataset Version: %s", version)
         if version not in ["v2.0", "v2.1"]:
             raise NotImplementedError(
                 f"Only v2.0 and v2.1 are supported, got {version}"
@@ -206,6 +213,11 @@ class LeRobotDataset:
             observation_is_pad=Feature(shape=(self.n_observation,), dtype="bool"),
             action_is_pad=Feature(shape=(self.n_action,), dtype="bool"),
         )
+
+        logger.debug("Observation Data Keys: %s", self.observation_data_keys)
+        logger.debug("Observation Video Keys: %s", self.observation_video_keys)
+        logger.debug("Action Keys: %s", self.action_keys)
+        logger.debug("Extra Keys: %s", self.extra_keys)
 
         if len(self.observation_data_keys) + len(self.observation_video_keys) == 0:
             raise ValueError("Observation must not be empty.")
