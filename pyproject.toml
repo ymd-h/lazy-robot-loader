@@ -31,6 +31,7 @@ issues = "https://github.com/ymd-h/lazy-robot-loader/issues"
 [dependency-groups]
 dev = [
     "beartype>=0.21.0",
+    "hatch>=1.14.2",
     "pytest>=8.4.2",
     "pytest-benchmark>=5.1.0",
     "pytest-cov>=7.0.0",
@@ -45,6 +46,10 @@ dev = [
 source-include = [
   "py.typed",
 ]
+
+
+[tool.hatch.envs.default]
+installer = "uv"
 
 
 [tool.ruff.lint]
