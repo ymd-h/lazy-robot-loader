@@ -43,8 +43,8 @@ jobs:
         run: |
           { echo '## Benchmark'; echo '```'; hatch test --no-cov -n=0 tests/test_bench.py; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Build wheels
-        uses: pypa/cibuildwheel@7c619efba910c04005a835b110b057fc28fd6e93 # v3.2.0
+        run: hatch build
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: cibw-wheels
-          path: ./wheelhouse/*.whl
+          name: wheel
+          path: ./dist/lazy_robot_loader-*
