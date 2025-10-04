@@ -20,6 +20,7 @@
         uv
       ];
       buildInputs = libs;
+      HATCH_ENV_TYPE_VIRTUAL_UV_PATH = "${pkgs.uv}/bin/uv";
     } // (
       if pkgs.stdenv.isDarwin
       then { DYLD_LIBRARY_PATH = libPath; }
