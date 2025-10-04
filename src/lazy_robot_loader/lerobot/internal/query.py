@@ -7,7 +7,6 @@ def agg_vector(
     agg: str,
     col: str,
     length: int,
-    window: str = "()",
 ) -> str:
     """
     Element-wise Aggregation over List or Array
@@ -31,7 +30,7 @@ def agg_vector(
     return (
         "["
         + ",".join(
-            (f"""{agg}({col}[{i + 1}]::FLOAT) OVER {window}""" for i in range(length))
+            (f"""{agg}({col}[{i + 1}]::FLOAT)""" for i in range(length))
         )
         + "]"
     )
@@ -41,14 +40,13 @@ def agg_stats(
     mu: str,
     sigma: str,
     count: str,
-    window: str = "()",
 ) -> tuple[str, str]:
     """
     Aggregate Stats
     """
-    mu_agg = f"""(sum({mu} * {count}) OVER {window}) / (sum({count}) OVER {window})"""
+    mu_agg = f"""(sum({mu} * {count})) / (sum({count}))"""
 
-    sigma_agg = f"""sqrt(((sum({count} * (pow(({mu}), 2) + pow(({sigma}), 2))) OVER {window}) / (sum({count}) OVER {window}) - pow(({mu_agg}), 2)))"""
+    sigma_agg = f"""sqrt(((sum({count} * (pow(({mu}), 2) + pow(({sigma}), 2)))) / (sum({count})) - pow(({mu_agg}), 2)))"""
 
     return mu_agg, sigma_agg
 
@@ -56,7 +54,6 @@ def agg_stats(
 def agg_data_stats(
     key: str,
     length: int,
-    window: str = "()",
 ) -> str:
     """
     Aggregate Stats for Data
@@ -81,7 +78,6 @@ def agg_data_stats(
                 f'"stats"."{key}"."mean"[{i + 1}]::FLOAT',
                 f'"stats"."{key}"."std"[{i + 1}]::FLOAT',
                 f'"stats"."{key}"."count"[1]',
-                window,
             )
             for i in range(length)
         )
@@ -102,7 +98,6 @@ def agg_data_stats(
 
 def agg_image_stats(
     key: str,
-    window: str = "()",
 ) -> str:
     """
     Aggregate Stats for Image
@@ -130,7 +125,6 @@ def agg_image_stats(
                 f'"stats"."{key}"."mean"[{i + 1}][1][1]::FLOAT',
                 f'"stats"."{key}"."std"[{i + 1}][1][1]::FLOAT',
                 f'"stats"."{key}"."count"[1]',
-                window,
             )
             for i in range(3)
         )
