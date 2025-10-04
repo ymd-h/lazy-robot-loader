@@ -1,1 +1,4 @@
 .coverage
+*.pyc
+__pycache__
+dist

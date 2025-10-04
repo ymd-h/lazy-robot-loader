@@ -30,16 +30,7 @@ issues = "https://github.com/ymd-h/lazy-robot-loader/issues"
 
 [dependency-groups]
 dev = [
-    "beartype>=0.21.0",
     "hatch>=1.14.2",
-    "pytest>=8.4.2",
-    "pytest-benchmark>=5.1.0",
-    "pytest-cov>=7.0.0",
-    "pytest-ruff>=0.5",
-    "pytest-ty>=0.1.2",
-    "pytest-xdist>=3.8.0",
-    "ruff>=0.13.1",
-    "ty>=0.0.1a21",
 ]
 
 [tool.uv.build-backend]
@@ -51,6 +42,37 @@ source-include = [
 [tool.hatch.envs.default]
 installer = "uv"
 
+
+[tool.hatch.envs.hatch-test]
+dependencies = [
+    "beartype>=0.21.0",
+    "pytest>=8.4.2",
+    "pytest-benchmark>=5.1.0",
+    "pytest-cov>=7.0.0",
+    "pytest-ruff>=0.5",
+    "pytest-ty>=0.1.2",
+    "pytest-xdist>=3.8.0",
+    "ruff>=0.13.1",
+    "ty>=0.0.1a21",
+]
+
+[[tool.hatch.envs.hatch-test.matrix]]
+python = ["3.13", "3.12", "3.11", "3.10"]
+
+
+[tool.hatch.envs.hatch-static-analysis]
+skip-install = false
+config-path = "none"
+dependencies = [
+    "ruff>=0.13.1",
+    "ty>=0.0.1a21",
+]
+
+[tool.hatch.envs.hatch-static-analysis.scripts]
+format-check = "ruff format --check"
+format-fix = "ruff format"
+lint-check = "ruff check && ty check"
+lint-fix = "ruff check --fix && ty check"
 
 [tool.ruff.lint]
 ignore = [
