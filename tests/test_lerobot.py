@@ -32,6 +32,10 @@ def test_pushT():
         np.asarray([[222.0, 97.0]]),
     )
     np.testing.assert_allclose(
+        item["observation_is_pad"],
+        np.asarray([False]),
+    )
+    np.testing.assert_allclose(
         item["action"],
         np.asarray(
             [
@@ -41,6 +45,10 @@ def test_pushT():
                 ]
             ]
         ),
+    )
+    np.testing.assert_allclose(
+        item["action_is_pad"],
+        np.asarray([False]),
     )
     np.testing.assert_allclose(
         item["episode_index"],
