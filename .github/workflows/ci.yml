@@ -38,6 +38,4 @@ jobs:
         uses: pypa/hatch@a3c83ab3d481fbc2dc91dd0088628817488dd1d5
       - name: Run Test
         run: |
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
-          hatch test --all >> "$GITHUB_STEP_SUMMARY"
-          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          { echo '```'; hatch test --all; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
