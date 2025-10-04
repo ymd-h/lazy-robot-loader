@@ -20,3 +20,5 @@ def test_agg_stats():
 
     assert m.num_rows == 1
     assert m.num_columns == 1
+
+    assert m.to_pydict()["mu"][0] == 20
