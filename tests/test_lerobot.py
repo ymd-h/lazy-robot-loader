@@ -12,6 +12,57 @@ def test_pushT():
     assert isinstance(item, dict)
     assert item["observation.state"].shape == (1, 2)
 
+    assert set(item.keys()) == (
+        {
+            "observation.state",
+            "observation.image",
+            "observation_is_pad",
+            "action",
+            "action_is_pad",
+            "episode_index",
+            "frame_index",
+            "timestamp",
+            "index",
+            "task_index",
+        }
+    )
+
+    np.testing.assert_allclose(
+        item["observation.state"],
+        np.asarray([[222.0, 97.0]]),
+    )
+    np.testing.assert_allclose(
+        item["action"],
+        np.asarray(
+            [
+                [
+                    233.0,
+                    71.0,
+                ]
+            ]
+        ),
+    )
+    np.testing.assert_allclose(
+        item["episode_index"],
+        np.asarray([0]),
+    )
+    np.testing.assert_allclose(
+        item["frame_index"],
+        np.asarray([0]),
+    )
+    np.testing.assert_allclose(
+        item["timestamp"],
+        np.asarray([0.0]),
+    )
+    np.testing.assert_allclose(
+        item["index"],
+        np.asarray([0]),
+    )
+    np.testing.assert_allclose(
+        item["task_index"],
+        np.asarray([0]),
+    )
+
 
 def test_pushT_5obs():
     data = LeRobotDataset(
