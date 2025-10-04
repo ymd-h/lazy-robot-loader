@@ -26,7 +26,7 @@ def test_pushT_5obs():
 
 def test_pushT_stats():
     v2_0 = LeRobotDataset(repo_id="lerobot/pusht@v2.0").stats
-    v2_1 = LeRobotDataset(repo_id="lerobot/pusht@v2.0").stats
+    v2_1 = LeRobotDataset(repo_id="lerobot/pusht@v2.1").stats
 
     assert len(set(v2_0.keys())) > 0
     assert len(set(v2_0.keys()) ^ set(v2_1.keys())) == 0
