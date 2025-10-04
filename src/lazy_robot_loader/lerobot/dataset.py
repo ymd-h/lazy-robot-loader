@@ -432,8 +432,9 @@ class LeRobotDataset:
         assert timestamp.ndim == 1, f"timestamp.ndim must be 1, but {timestamp.ndim}"
         assert len(timestamp) > 0, f"timestamp is empty: {frame_index}"
 
-        videos = {
-            video_key: query_video(
+        videos = {}
+        for video_key in self.observation_video_keys:
+            video_image, video_pad = query_video(
                 self._con,
                 video_path=self._video_path(
                     episode_index=episode_index,
@@ -441,8 +442,10 @@ class LeRobotDataset:
                 ),
                 timestamp=timestamp,
             )
-            for video_key in self.observation_video_keys
-        }
+            videos |= {
+                video_key: video_image,
+                f"{video_key}_is_pad": video_pad,
+            }
 
         item = {
             **observation,

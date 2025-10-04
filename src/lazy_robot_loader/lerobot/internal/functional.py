@@ -4,7 +4,7 @@ import av
 import duckdb
 import numpy as np
 from numpy.typing import DTypeLike
-from jaxtyping import Integer, Float, Shaped
+from jaxtyping import Bool, Integer, Float, Shaped
 import pyarrow as pa
 
 from lazy_robot_loader.core import Feature
@@ -71,7 +71,7 @@ def query_video(
     con: duckdb.DuckDBPyConnection,
     video_path: str,
     timestamp: Float[np.ndarray, " N"],
-) -> Integer[np.ndarray, "N H W C=3"]:
+) -> tuple[Integer[np.ndarray, "N H W C=3"], Bool[np.ndarray, " N"]]:
     """
     Query Video Frames
 
@@ -113,20 +113,23 @@ def query_video(
 
         it = iter(container.decode(video=0))
         imgs: list[Integer[np.ndarray, "H W 3"]] = []
+        pads: list[bool] = []
         img: Integer[np.ndarray, "H W 3"] | None = None
         for t in timestamp:
             for f in it:
                 if t <= f.time:
                     img = f.to_ndarray(format="rgb24")
                     imgs.append(img)
+                    pads.append(False)
                     break
             else:
                 # Video has ended.
                 # We re-add the last frame.
                 assert img is not None
                 imgs.append(img)
+                pads.append(True)
 
-        return np.stack(imgs)
+        return np.stack(imgs), np.asarray(pads, dtype=bool)
 
 
 def query_data(

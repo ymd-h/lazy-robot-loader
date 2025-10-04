@@ -17,6 +17,7 @@ def test_pushT():
             "observation.state",
             "observation.image",
             "observation_is_pad",
+            "observation.image_is_pad",
             "action",
             "action_is_pad",
             "episode_index",
@@ -34,6 +35,10 @@ def test_pushT():
     assert item["observation.image"].shape == (1, 96, 96, 3)
     np.testing.assert_allclose(
         item["observation_is_pad"],
+        np.asarray([False]),
+    )
+    np.testing.assert_allclose(
+        item["observation.image_is_pad"],
         np.asarray([False]),
     )
     np.testing.assert_allclose(
