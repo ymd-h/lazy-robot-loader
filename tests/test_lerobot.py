@@ -84,6 +84,19 @@ def test_pushT_5obs():
     assert item["observation.state"].shape == (5, 2)
 
 
+def test_pushT_episode_boundary():
+    data = LeRobotDataset(
+        repo_id="lerobot/pusht@v2.0",
+        n_action=2,
+    )
+
+    item = data[160]
+    np.testing.assert_allclose(
+        item["action_is_pad"],
+        np.asarray([False, True]),
+    )
+
+
 def test_pushT_stats():
     v2_0 = LeRobotDataset(repo_id="lerobot/pusht@v2.0").stats
     v2_1 = LeRobotDataset(repo_id="lerobot/pusht@v2.1").stats
