@@ -19,8 +19,6 @@ def agg_vector(
         Column of List or Array
     length : int
         Length of ``col``
-    window : str, optional
-        WINDOW clause
 
     Returns
     -------
@@ -62,8 +60,6 @@ def agg_data_stats(
         Feature Key for Data
     length : int
         Length of List or Array
-    window : str
-        WINDOW Clause
 
     Returns
     -------
@@ -104,8 +100,6 @@ def agg_image_stats(
     ----------
     key : str
         Feature Key for Image
-    window : str, optional
-        WINDOW Clause
 
     Returns
     -------
