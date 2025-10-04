@@ -31,6 +31,7 @@ def test_pushT():
         item["observation.state"],
         np.asarray([[222.0, 97.0]]),
     )
+    assert item["observation.image"].shape == (1, 96, 96, 3)
     np.testing.assert_allclose(
         item["observation_is_pad"],
         np.asarray([False]),
