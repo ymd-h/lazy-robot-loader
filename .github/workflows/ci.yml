@@ -38,7 +38,7 @@ jobs:
         uses: pypa/hatch@a3c83ab3d481fbc2dc91dd0088628817488dd1d5
       - name: Run Test
         run: |
-          { echo '```'; hatch test --all; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '## Unit Test'; echo '```'; hatch test --all; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
       - name: Run Bench
         run: |
-          { echo '```'; hatch test --no-cov -n=0 tests/test_bench.py; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          { echo '## Benchmark'; echo '```'; hatch test --no-cov -n=0 tests/test_bench.py; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
