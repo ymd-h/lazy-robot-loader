@@ -184,7 +184,7 @@ class LeRobotDataset:
         self.action_keys: list[str] = []
 
         self.extra_keys: list[str] = [key for key in extra_keys]
-        for k in ["episode_index", "frame_index", "timestamp"]:
+        for k in ["episode_index", "frame_index", "timestamp", "index", "task_index"]:
             if k not in self.extra_keys:
                 self.extra_keys.append(k)
 
