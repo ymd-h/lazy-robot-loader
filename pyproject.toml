@@ -38,16 +38,16 @@ source-include = [
   "py.typed",
 ]
 source-exclude = [
-  "*~",
-  "~*",
-  "#*",
-  "*#",
+  "*\\~",
+  "\\~*",
+  "\\#*",
+  "*\\#",
 ]
 wheel-exclude = [
-  "*~",
-  "~*",
-  "#*",
-  "*#",
+  "*\\~",
+  "\\~*",
+  "\\#*",
+  "*\\#",
 ]
 
 [tool.hatch.envs.default]
