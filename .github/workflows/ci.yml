@@ -39,3 +39,6 @@ jobs:
       - name: Run Test
         run: |
           { echo '```'; hatch test --all; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Run Bench
+        run: |
+          { echo '```'; hatch test --no-cov -n=0 tests/test_bench.py; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
