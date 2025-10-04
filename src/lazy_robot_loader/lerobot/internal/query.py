@@ -29,9 +29,7 @@ def agg_vector(
     """
     return (
         "["
-        + ",".join(
-            (f"""{agg}({col}[{i + 1}]::FLOAT)""" for i in range(length))
-        )
+        + ",".join((f"""{agg}({col}[{i + 1}]::FLOAT)""" for i in range(length)))
         + "]"
     )
 
@@ -133,8 +131,11 @@ def agg_image_stats(
     mu = f"[{','.join((f'[[{mi}]]' for (mi, _) in m))}]"
     sigma = f"[{','.join((f'[[{si}]]' for (_, si) in s))}]"
 
-    max_ = agg_vector("max", f'"stats"."{key}"."max"[1][1]', 1)
-    min_ = agg_vector("min", f'"stats"."{key}"."min"[1][1]', 1)
+    mmax = (f'max("stats"."{key}"."max"[{i + 1}][1][1])' for i in range(3))
+    max_ = f"[{','.join((f'[[{mi}]]' for mi in mmax))}]"
+
+    mmin = (f'min("stats"."{key}"."min"[{i + 1}][1][1])' for i in range(3))
+    min_ = f"[{','.join((f'[[{mi}]]' for mi in mmin))}]"
 
     return f"""struct_pack(
       "max":={max_},
